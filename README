@@ -1,0 +1,10 @@
+My make check was testing with single --input=test1.txt,single --output=test2.txt and both
+use diff test1.txt test2.txt to check if the two files are the same.
+Also I test for --catch only and --input=test1.txt --output=test2.txt  --segfault --catch
+My test case will stop when get segfault.
+I use GDB to run my lab0 and make two pictures of them.
+my make build the lab0 correctly,and make clean clean the files back to orignal state.
+my lab0 correctly work with --input --output for both large and small files
+it exit and display error message when input with a unreadble file and output with a unreadble file or report for nonexist 
+input file.
+work for --segfault and --catch and both
