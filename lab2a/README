@@ -1,0 +1,68 @@
+#######lab2a########
+Student Name: ZhengKai Zhang
+Student ID: 604582162
+
+My graph is first.png and second.png
+
+my program correctly work with the option in spec.
+
+Answer to the question at below
+
+I try both required_argument and option_argument they both can't fix the problem when I input non-argument.
+
+------------------------------------Answer to questions--------------------------------------------
+2A 1A Why does it take this many threads or iterations?
+if Threads or iterations are very low, then the possiblity of one 
+thread disturbuted by another thread will be low.(the race condition cause incorrect result will be low)
+So it take many thread or iterations to cause fail.
+
+1B Why does a significantly smaller number of iterations so seldom fail?
+Small number of iterations seldom fail because significantly smaller number of iteration make
+the time thread accessing the count be low. Then there will be less time for a race condition to occur even if
+there are a large number of threads running. if the number of iterations is low, it will finish before the 
+next thread is even created or run. so significantly smaller number of iterations so seldom fail. 
+
+2A Why does the average cost per operation drop with increasing iterations?
+Average cost per operation drop with increasing iteration because we calculate average cost
+per operation using totoa run time divide by the number of operations.
+If the number of iterations is low,then the overhead time dominates,and when number of 
+iterations goes to very high, the overhead time become less important
+
+2B How do we know what the “correct” cost is?
+  The way to find the correct cost is either increase iteration to very high then
+  the overhead time become trivial. or we can find the overhead for thread creation,and subtract it 
+  from the total time inorder to get the correct run time.
+  
+3C Why are the --yield runs so much slower? Where is the extra time going? 
+  --yield runs so much slower because it is need a context switch from current thread
+  to the next thread to run. this overhead accounts for the extra time.
+
+4D Can we get valid timings if we are using --yield? How, or why not?
+  we can't got valid timings with --yield since it is not possible 
+  to determine the amount of time of context switching.
+
+3A Why do all of the options perform similarly for low numbers of threads?
+ If there is low number of threads,each tread does not have to wait long to 
+ obtain the lock or compare and swap to return successfully.
+ The time obtain to access critical section is negligable.
+ so the perform similarly for low numbers of threads.
+ 
+3B Why do the three protected operations slow down as the number of threads rises?
+   Three protected operation slow down as the number of threads grow
+   because all three protection need to check critical section will not get 
+   into a race condition or check the correct value is in place at the time 
+   count updated in compare_and_swap. as the number of threads gos up,these thread 
+   need to wait for the lock or get the correct value in compare_and_swap which slow 
+   down the operation.
+   
+3C Why are spin-locks so expensive for large numbers of threads?
+   Spin-locks are so expensive for large numbers of threads since 
+   they only allow on single thread to run the critical section at any 
+   give time,and other threads will in busy waiting.Busy waiting it the 
+   thread repeately checks to see if the condition is true. As results the
+   threads take a lot of CPU resources waiting for the lock. And Mutexs stop
+   threads without a lock and compare_and_swap allows many threads to perform 
+   useful work and ensuring the protected value was atomically accessed in the 
+   critical section.These to tech avoid busy waiting so they much faster than 
+   spin-locks for large numbers of threads.
+    
