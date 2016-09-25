@@ -1,0 +1,1204 @@
+#######lab2b########
+Student Name: ZhengKai Zhang
+Student ID: 604582162
+
+My graph is GRAPH.png
+
+my program correctly work with the option in spec.
+
+Answer to the question at below
+#########################################################
+QUESTION 2C.1A
+Explain the change in performance of the synchronized methods as a function of the number of threads per list.
+As the ratio of threads/lists increase, the time per operations increase. When #lists<#threads, some threads have to wait for others
+to acquire locks for the same sublist,and when #lists>#threads, all the sublist can assigned to a specific thread,so all operations on a sublist 
+can done in one assigned thread. There will be some threads need to handle muitiple threads, but no threads need to wait other threads. Also as 
+number of sublist increase.Then it serializing fewer operations per lock which make speed faster.
+And more threads per list will make more conflict,therefore, it takes more time to complete.
+
+
+QUESTION 2C.1B
+Explain why threads per list is a more interesting number than threads (for this particular measurement).
+if we only use the number of threads to draw the graph, we won't find the relationship with thread vs number of sublist,also the former
+gives the notion of memory contention.  When there the ratio is high, there is more memory contention. But when the ratio is low,then memory contention is less likely.
+
+QUESTION 2C.2A
+Compare the time per operation when increasing the lists value. Explain your observations.
+when I increase the lists number value the time per operation is decrease. Increase the number of list will decrease the probablity of memory contention happen.
+
+
+QUESTION 2C.2B
+Compare the time per operation between mutex and spinlock. Explain your observations.
+my spin_lock is faster than my mutex base on my data from graph.
+
+
+QUESTIONS 2C.3A
+Why must the mutex be held when pthread_cond_wait is called?
+
+the mutex must be held when pthread_cond_wait is called otherwise it would
+be possible for other threads change the predicate condtion inbetween check and 
+calling the pthread_cond_wait. it may case the pthread_cond_wait would waiting forever because
+it won't know the change of predicate varraible.
+
+QUESTION 2C.3B
+Why must the mutex be released when the waiting thread is blocked?
+Mutex must be released when the waiting thread is blocked.
+if not, the predicate condtion would never be able to changed by other  
+thread. So if waiting thread not release the mutex,then other threands can not change 
+the predicate condtion because it would need to have the mutex,then we would 
+have a infinite waiting.
+
+QUESTION 2C.3C
+Why must the mutex be reacquired when the calling thread resumes?
+the mutex must be reacquired when the calling thread resumes since 
+we have to assure that the condition won't change while the calling thread is 
+doing whatever it need to do. the calling thread resumes since a certain condition is true.
+if it not reacquire the mutex then other thread can the the condition inbetween check and calling
+the pthread_cond_wait. it may case the pthread_cond_wait would waiting forever because
+it won't know the change of predicate varraible. reacquired the mutex use to exclusive access condition.
+ 
+QUESTION 2C.3D
+Why must mutex release be done inside of pthread_cond_wait?  Why can't the caller simply release the mutex before calling pthread_cond_wait?
+the mutex release must be done inside of pthread_cond_wait because if it was done before the pthread_cond_wait,
+there would be some opportunity for another thread to change the condition after unlock the mutex
+and before calling the pthread_cond_wait. then it could cause the race condition and 
+cause the pthread_cond_wait to wait forever.Since it won't know the change of predicate varraible.
+Make the mutex relase be done inside of pthread_cond_wait will slove this problem.
+QUESTION 2C.3E
+Can pthread_cond_wait be implemented in user mode?  If so, how?  If it can only be implemented by a system call, explain why?
+
+This cannot be done in a user mode implementation of pthread_cond_wait
+because the release mutex and pthread_cond_wait have to be done together which require non preemption mode which can not be done
+in user mode implementation. since only the system call can disable system interrupts. 
+
+
+################################Performance Analysis######################################################################
+##############unprotected#################################20k##########################
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  us/call  us/call  name    
+ 51.04      0.27     0.27    20000    13.52    13.52  SortedList_insert
+ 49.15      0.53     0.26    20000    13.02    13.02  SortedList_lookup
+  0.00      0.53     0.00    40001     0.00     0.00  mylock
+  0.00      0.53     0.00    40001     0.00     0.00  myunlock
+  0.00      0.53     0.00    40000     0.00     0.00  hash
+  0.00      0.53     0.00    20000     0.00     0.00  SortedList_delete
+  0.00      0.53     0.00        2     0.00     0.00  SortedList_length
+  
+			Call graph
+index % time    self  children    called     name
+                                                 <spontaneous>
+[1]    100.0    0.00    0.53                 exefunc [1]
+                0.27    0.00   20000/20000       SortedList_insert [2]
+                0.26    0.00   20000/20000       SortedList_lookup [3]
+                0.00    0.00   40001/40001       mylock [4]
+                0.00    0.00   40001/40001       myunlock [5]
+                0.00    0.00   40000/40000       hash [6]
+                0.00    0.00   20000/20000       SortedList_delete [7]
+                0.00    0.00       1/2           SortedList_length [8]
+-----------------------------------------------
+                0.27    0.00   20000/20000       exefunc [1]
+[2]     50.9    0.27    0.00   20000         SortedList_insert [2]
+-----------------------------------------------
+                0.26    0.00   20000/20000       exefunc [1]
+[3]     49.1    0.26    0.00   20000         SortedList_lookup [3]
+-----------------------------------------------
+                0.00    0.00   40001/40001       exefunc [1]
+[4]      0.0    0.00    0.00   40001         mylock [4]
+-----------------------------------------------
+                0.00    0.00   40001/40001       exefunc [1]
+[5]      0.0    0.00    0.00   40001         myunlock [5]
+-----------------------------------------------
+                0.00    0.00   40000/40000       exefunc [1]
+[6]      0.0    0.00    0.00   40000         hash [6]
+-----------------------------------------------
+                0.00    0.00   20000/20000       exefunc [1]
+[7]      0.0    0.00    0.00   20000         SortedList_delete [7]
+-----------------------------------------------
+                0.00    0.00       1/2           exefunc [1]
+                0.00    0.00       1/2           main [14]
+[8]      0.0    0.00    0.00       2         SortedList_length [8]
+-----------------------------------------------
+
+Index by function name
+
+   [7] SortedList_delete       [3] SortedList_lookup       [5] myunlock
+   [2] SortedList_insert       [6] hash
+   [8] SortedList_length       [4] mylock
+##########################################################40k######################################
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  us/call  us/call  name    
+ 57.80      1.05     1.05    40000    26.30    26.30  SortedList_lookup
+ 41.83      1.81     0.76    40000    19.03    19.03  SortedList_insert
+  0.55      1.82     0.01    80000     0.13     0.13  hash
+  0.00      1.82     0.00    80001     0.00     0.00  mylock
+  0.00      1.82     0.00    80001     0.00     0.00  myunlock
+  0.00      1.82     0.00    40000     0.00     0.00  SortedList_delete
+  0.00      1.82     0.00        2     0.00     0.00  SortedList_length
+
+			Call graph
+
+
+granularity: each sample hit covers 2 byte(s) for 0.55% of 1.82 seconds
+
+index % time    self  children    called     name
+                                                 <spontaneous>
+[1]    100.0    0.00    1.82                 exefunc [1]
+                1.05    0.00   40000/40000       SortedList_lookup [2]
+                0.76    0.00   40000/40000       SortedList_insert [3]
+                0.01    0.00   80000/80000       hash [4]
+                0.00    0.00   80001/80001       mylock [5]
+                0.00    0.00   80001/80001       myunlock [6]
+                0.00    0.00   40000/40000       SortedList_delete [7]
+                0.00    0.00       1/2           SortedList_length [8]
+-----------------------------------------------
+                1.05    0.00   40000/40000       exefunc [1]
+[2]     57.7    1.05    0.00   40000         SortedList_lookup [2]
+-----------------------------------------------
+                0.76    0.00   40000/40000       exefunc [1]
+[3]     41.8    0.76    0.00   40000         SortedList_insert [3]
+-----------------------------------------------
+                0.01    0.00   80000/80000       exefunc [1]
+[4]      0.5    0.01    0.00   80000         hash [4]
+-----------------------------------------------
+                0.00    0.00   80001/80001       exefunc [1]
+[5]      0.0    0.00    0.00   80001         mylock [5]
+-----------------------------------------------
+                0.00    0.00   80001/80001       exefunc [1]
+[6]      0.0    0.00    0.00   80001         myunlock [6]
+-----------------------------------------------
+                0.00    0.00   40000/40000       exefunc [1]
+[7]      0.0    0.00    0.00   40000         SortedList_delete [7]
+-----------------------------------------------
+                0.00    0.00       1/2           exefunc [1]
+                0.00    0.00       1/2           main [14]
+[8]      0.0    0.00    0.00       2         SortedList_length [8]
+-----------------------------------------------
+
+Index by function name
+
+   [7] SortedList_delete       [2] SortedList_lookup       [6] myunlock
+   [3] SortedList_insert       [4] hash
+   [8] SortedList_length       [5] mylock
+##################################60k###################################
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  us/call  us/call  name    
+ 55.00      2.13     2.13    60000    35.56    35.56  SortedList_lookup
+ 44.93      3.88     1.74    60000    29.05    29.05  SortedList_insert
+  0.26      3.89     0.01                             main
+  0.00      3.89     0.00   120001     0.00     0.00  mylock
+  0.00      3.89     0.00   120001     0.00     0.00  myunlock
+  0.00      3.89     0.00   120000     0.00     0.00  hash
+  0.00      3.89     0.00    60000     0.00     0.00  SortedList_delete
+  0.00      3.89     0.00        2     0.00     0.00  SortedList_length
+
+			Call graph
+
+
+granularity: each sample hit covers 2 byte(s) for 0.26% of 3.89 seconds
+
+index % time    self  children    called     name
+                                                 <spontaneous>
+[1]     99.7    0.00    3.88                 exefunc [1]
+                2.13    0.00   60000/60000       SortedList_lookup [2]
+                1.74    0.00   60000/60000       SortedList_insert [3]
+                0.00    0.00  120001/120001      mylock [5]
+                0.00    0.00  120001/120001      myunlock [6]
+                0.00    0.00  120000/120000      hash [7]
+                0.00    0.00   60000/60000       SortedList_delete [8]
+                0.00    0.00       1/2           SortedList_length [9]
+-----------------------------------------------
+                2.13    0.00   60000/60000       exefunc [1]
+[2]     54.9    2.13    0.00   60000         SortedList_lookup [2]
+-----------------------------------------------
+                1.74    0.00   60000/60000       exefunc [1]
+[3]     44.8    1.74    0.00   60000         SortedList_insert [3]
+-----------------------------------------------
+                                                 <spontaneous>
+[4]      0.3    0.01    0.00                 main [4]
+                0.00    0.00       1/2           SortedList_length [9]
+-----------------------------------------------
+                0.00    0.00  120001/120001      exefunc [1]
+[5]      0.0    0.00    0.00  120001         mylock [5]
+-----------------------------------------------
+                0.00    0.00  120001/120001      exefunc [1]
+[6]      0.0    0.00    0.00  120001         myunlock [6]
+-----------------------------------------------
+                0.00    0.00  120000/120000      exefunc [1]
+[7]      0.0    0.00    0.00  120000         hash [7]
+-----------------------------------------------
+                0.00    0.00   60000/60000       exefunc [1]
+[8]      0.0    0.00    0.00   60000         SortedList_delete [8]
+-----------------------------------------------
+                0.00    0.00       1/2           exefunc [1]
+                0.00    0.00       1/2           main [4]
+[9]      0.0    0.00    0.00       2         SortedList_length [9]
+-----------------------------------------------
+
+Index by function name
+
+   [8] SortedList_delete       [2] SortedList_lookup       [5] mylock
+   [3] SortedList_insert       [7] hash                    [6] myunlock
+   [9] SortedList_length       [4] main
+###############################################80k#########################################
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  us/call  us/call  name    
+ 53.92      3.67     3.67    80000    45.83    45.83  SortedList_lookup
+ 46.11      6.80     3.14    80000    39.20    39.20  SortedList_insert
+  0.15      6.81     0.01   160000     0.06     0.06  hash
+  0.00      6.81     0.00   160001     0.00     0.00  mylock
+  0.00      6.81     0.00   160001     0.00     0.00  myunlock
+  0.00      6.81     0.00    80000     0.00     0.00  SortedList_delete
+  0.00      6.81     0.00        2     0.00     0.00  SortedList_length
+
+			Call graph
+
+
+granularity: each sample hit covers 2 byte(s) for 0.15% of 6.81 seconds
+
+index % time    self  children    called     name
+                                                 <spontaneous>
+[1]    100.0    0.00    6.81                 exefunc [1]
+                3.67    0.00   80000/80000       SortedList_lookup [2]
+                3.14    0.00   80000/80000       SortedList_insert [3]
+                0.01    0.00  160000/160000      hash [4]
+                0.00    0.00  160001/160001      mylock [5]
+                0.00    0.00  160001/160001      myunlock [6]
+                0.00    0.00   80000/80000       SortedList_delete [7]
+                0.00    0.00       1/2           SortedList_length [8]
+-----------------------------------------------
+                3.67    0.00   80000/80000       exefunc [1]
+[2]     53.8    3.67    0.00   80000         SortedList_lookup [2]
+-----------------------------------------------
+                3.14    0.00   80000/80000       exefunc [1]
+[3]     46.0    3.14    0.00   80000         SortedList_insert [3]
+-----------------------------------------------
+                0.01    0.00  160000/160000      exefunc [1]
+[4]      0.1    0.01    0.00  160000         hash [4]
+-----------------------------------------------
+                0.00    0.00  160001/160001      exefunc [1]
+[5]      0.0    0.00    0.00  160001         mylock [5]
+-----------------------------------------------
+                0.00    0.00  160001/160001      exefunc [1]
+[6]      0.0    0.00    0.00  160001         myunlock [6]
+-----------------------------------------------
+                0.00    0.00   80000/80000       exefunc [1]
+[7]      0.0    0.00    0.00   80000         SortedList_delete [7]
+-----------------------------------------------
+                0.00    0.00       1/2           exefunc [1]
+                0.00    0.00       1/2           main [14]
+[8]      0.0    0.00    0.00       2         SortedList_length [8]
+-----------------------------------------------
+
+Index by function name
+
+   [7] SortedList_delete       [2] SortedList_lookup       [6] myunlock
+   [3] SortedList_insert       [4] hash
+   [8] SortedList_length       [5] mylock
+#########################################100k######################################
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  us/call  us/call  name    
+ 56.73      5.78     5.78   100000    57.80    57.80  SortedList_lookup
+ 42.96     10.16     4.38   100000    43.78    43.78  SortedList_insert
+  0.25     10.18     0.03                             main
+  0.20     10.20     0.02   200000     0.10     0.10  hash
+  0.00     10.20     0.00   200001     0.00     0.00  mylock
+  0.00     10.20     0.00   200001     0.00     0.00  myunlock
+  0.00     10.20     0.00   100000     0.00     0.00  SortedList_delete
+  0.00     10.20     0.00        2     0.00     0.00  SortedList_length
+
+			Call graph
+
+
+granularity: each sample hit covers 2 byte(s) for 0.10% of 10.20 seconds
+
+index % time    self  children    called     name
+                                                 <spontaneous>
+[1]     99.8    0.00   10.18                 exefunc [1]
+                5.78    0.00  100000/100000      SortedList_lookup [2]
+                4.38    0.00  100000/100000      SortedList_insert [3]
+                0.02    0.00  200000/200000      hash [5]
+                0.00    0.00  200001/200001      mylock [6]
+                0.00    0.00  200001/200001      myunlock [7]
+                0.00    0.00  100000/100000      SortedList_delete [8]
+                0.00    0.00       1/2           SortedList_length [9]
+-----------------------------------------------
+                5.78    0.00  100000/100000      exefunc [1]
+[2]     56.7    5.78    0.00  100000         SortedList_lookup [2]
+-----------------------------------------------
+                4.38    0.00  100000/100000      exefunc [1]
+[3]     42.9    4.38    0.00  100000         SortedList_insert [3]
+-----------------------------------------------
+                                                 <spontaneous>
+[4]      0.2    0.03    0.00                 main [4]
+                0.00    0.00       1/2           SortedList_length [9]
+-----------------------------------------------
+                0.02    0.00  200000/200000      exefunc [1]
+[5]      0.2    0.02    0.00  200000         hash [5]
+-----------------------------------------------
+                0.00    0.00  200001/200001      exefunc [1]
+[6]      0.0    0.00    0.00  200001         mylock [6]
+-----------------------------------------------
+                0.00    0.00  200001/200001      exefunc [1]
+[7]      0.0    0.00    0.00  200001         myunlock [7]
+-----------------------------------------------
+                0.00    0.00  100000/100000      exefunc [1]
+[8]      0.0    0.00    0.00  100000         SortedList_delete [8]
+-----------------------------------------------
+                0.00    0.00       1/2           exefunc [1]
+                0.00    0.00       1/2           main [4]
+[9]      0.0    0.00    0.00       2         SortedList_length [9]
+-----------------------------------------------
+
+Index by function name
+
+   [8] SortedList_delete       [2] SortedList_lookup       [6] mylock
+   [3] SortedList_insert       [5] hash                    [7] myunlock
+   [9] SortedList_length       [4] main
+##########################################################################################
+
+#################Mutex##########################
+###############################list=1#####################################
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  ms/call  ms/call  name    
+ 53.62      3.66     3.66    79726     0.05     0.05  SortedList_lookup
+ 44.80      6.71     3.06    79764     0.04     0.04  SortedList_insert
+  0.59      6.75     0.04   159509     0.00     0.00  hash
+  0.44      6.78     0.03                             exefunc
+  0.29      6.80     0.02    79811     0.00     0.00  SortedList_delete
+  0.29      6.82     0.02       17     1.18     1.18  SortedList_length
+  0.15      6.83     0.01                             main
+  0.00      6.83     0.00   159499     0.00     0.00  myunlock
+  0.00      6.83     0.00   159463     0.00     0.00  mylock
+
+			Call graph
+
+
+granularity: each sample hit covers 2 byte(s) for 0.15% of 6.83 seconds
+
+index % time    self  children    called     name
+                                                 <spontaneous>
+[1]     99.8    0.03    6.79                 exefunc [1]
+                3.66    0.00   79726/79726       SortedList_lookup [2]
+                3.06    0.00   79764/79764       SortedList_insert [3]
+                0.04    0.00  159509/159509      hash [4]
+                0.02    0.00   79811/79811       SortedList_delete [5]
+                0.02    0.00      16/17          SortedList_length [6]
+                0.00    0.00  159499/159499      myunlock [8]
+                0.00    0.00  159463/159463      mylock [9]
+-----------------------------------------------
+                3.66    0.00   79726/79726       exefunc [1]
+[2]     53.5    3.66    0.00   79726         SortedList_lookup [2]
+-----------------------------------------------
+                3.06    0.00   79764/79764       exefunc [1]
+[3]     44.7    3.06    0.00   79764         SortedList_insert [3]
+-----------------------------------------------
+                0.04    0.00  159509/159509      exefunc [1]
+[4]      0.6    0.04    0.00  159509         hash [4]
+-----------------------------------------------
+                0.02    0.00   79811/79811       exefunc [1]
+[5]      0.3    0.02    0.00   79811         SortedList_delete [5]
+-----------------------------------------------
+                0.00    0.00       1/17          main [7]
+                0.02    0.00      16/17          exefunc [1]
+[6]      0.3    0.02    0.00      17         SortedList_length [6]
+-----------------------------------------------
+                                                 <spontaneous>
+[7]      0.2    0.01    0.00                 main [7]
+                0.00    0.00       1/17          SortedList_length [6]
+-----------------------------------------------
+                0.00    0.00  159499/159499      exefunc [1]
+[8]      0.0    0.00    0.00  159499         myunlock [8]
+-----------------------------------------------
+                0.00    0.00  159463/159463      exefunc [1]
+[9]      0.0    0.00    0.00  159463         mylock [9]
+-----------------------------------------------
+
+Index by function name
+
+   [5] SortedList_delete       [2] SortedList_lookup       [7] main
+   [3] SortedList_insert       [1] exefunc                 [9] mylock
+   [6] SortedList_length       [4] hash                    [8] myunlock
+###############################list=2################################################
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  us/call  us/call  name    
+ 53.46      2.06     2.06    78889    26.16    26.16  SortedList_lookup
+ 44.90      3.80     1.73    78856    21.98    21.98  SortedList_insert
+  0.78      3.83     0.03   157931     0.19     0.19  hash
+  0.52      3.85     0.02       32   626.13   626.13  SortedList_length
+  0.52      3.87     0.02                             main
+  0.00      3.87     0.00   157735     0.00     0.00  mylock
+  0.00      3.87     0.00   157673     0.00     0.00  myunlock
+  0.00      3.87     0.00    79166     0.00     0.00  SortedList_delete
+
+			Call graph
+
+
+granularity: each sample hit covers 2 byte(s) for 0.26% of 3.87 seconds
+
+index % time    self  children    called     name
+                                                 <spontaneous>
+[1]     99.5    0.00    3.85                 exefunc [1]
+                2.06    0.00   78889/78889       SortedList_lookup [2]
+                1.73    0.00   78856/78856       SortedList_insert [3]
+                0.03    0.00  157931/157931      hash [4]
+                0.02    0.00      31/32          SortedList_length [6]
+                0.00    0.00  157735/157735      mylock [7]
+                0.00    0.00  157673/157673      myunlock [8]
+                0.00    0.00   79166/79166       SortedList_delete [9]
+-----------------------------------------------
+                2.06    0.00   78889/78889       exefunc [1]
+[2]     53.4    2.06    0.00   78889         SortedList_lookup [2]
+-----------------------------------------------
+                1.73    0.00   78856/78856       exefunc [1]
+[3]     44.8    1.73    0.00   78856         SortedList_insert [3]
+-----------------------------------------------
+                0.03    0.00  157931/157931      exefunc [1]
+[4]      0.8    0.03    0.00  157931         hash [4]
+-----------------------------------------------
+                                                 <spontaneous>
+[5]      0.5    0.02    0.00                 main [5]
+                0.00    0.00       1/32          SortedList_length [6]
+-----------------------------------------------
+                0.00    0.00       1/32          main [5]
+                0.02    0.00      31/32          exefunc [1]
+[6]      0.5    0.02    0.00      32         SortedList_length [6]
+-----------------------------------------------
+                0.00    0.00  157735/157735      exefunc [1]
+[7]      0.0    0.00    0.00  157735         mylock [7]
+-----------------------------------------------
+                0.00    0.00  157673/157673      exefunc [1]
+[8]      0.0    0.00    0.00  157673         myunlock [8]
+-----------------------------------------------
+                0.00    0.00   79166/79166       exefunc [1]
+[9]      0.0    0.00    0.00   79166         SortedList_delete [9]
+-----------------------------------------------
+
+Index by function name
+
+   [9] SortedList_delete       [2] SortedList_lookup       [7] mylock
+   [3] SortedList_insert       [4] hash                    [8] myunlock
+   [6] SortedList_length       [5] main
+##################################list=4###############################################
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  us/call  us/call  name    
+ 50.09      0.90     0.90    77201    11.68    11.68  SortedList_lookup
+ 42.86      1.67     0.77    76969    10.02    10.02  SortedList_insert
+  2.78      1.72     0.05   154300     0.32     0.32  hash
+  1.67      1.75     0.03                             exefunc
+  1.11      1.77     0.02       65   308.25   308.25  SortedList_length
+  1.11      1.79     0.02                             main
+  0.56      1.80     0.01    77721     0.13     0.13  SortedList_delete
+  0.00      1.80     0.00   154003     0.00     0.00  mylock
+  0.00      1.80     0.00   153545     0.00     0.00  myunlock
+
+			Call graph
+
+
+granularity: each sample hit covers 2 byte(s) for 0.55% of 1.80 seconds
+
+index % time    self  children    called     name
+                                                 <spontaneous>
+[1]     98.9    0.03    1.75                 exefunc [1]
+                0.90    0.00   77201/77201       SortedList_lookup [2]
+                0.77    0.00   76969/76969       SortedList_insert [3]
+                0.05    0.00  154300/154300      hash [4]
+                0.02    0.00      64/65          SortedList_length [6]
+                0.01    0.00   77721/77721       SortedList_delete [7]
+                0.00    0.00  154003/154003      mylock [8]
+                0.00    0.00  153545/153545      myunlock [9]
+-----------------------------------------------
+                0.90    0.00   77201/77201       exefunc [1]
+[2]     50.0    0.90    0.00   77201         SortedList_lookup [2]
+-----------------------------------------------
+                0.77    0.00   76969/76969       exefunc [1]
+[3]     42.8    0.77    0.00   76969         SortedList_insert [3]
+-----------------------------------------------
+                0.05    0.00  154300/154300      exefunc [1]
+[4]      2.8    0.05    0.00  154300         hash [4]
+-----------------------------------------------
+                                                 <spontaneous>
+[5]      1.1    0.02    0.00                 main [5]
+                0.00    0.00       1/65          SortedList_length [6]
+-----------------------------------------------
+                0.00    0.00       1/65          main [5]
+                0.02    0.00      64/65          exefunc [1]
+[6]      1.1    0.02    0.00      65         SortedList_length [6]
+-----------------------------------------------
+                0.01    0.00   77721/77721       exefunc [1]
+[7]      0.6    0.01    0.00   77721         SortedList_delete [7]
+-----------------------------------------------
+                0.00    0.00  154003/154003      exefunc [1]
+[8]      0.0    0.00    0.00  154003         mylock [8]
+-----------------------------------------------
+                0.00    0.00  153545/153545      exefunc [1]
+[9]      0.0    0.00    0.00  153545         myunlock [9]
+-----------------------------------------------
+
+Index by function name
+
+   [7] SortedList_delete       [2] SortedList_lookup       [5] main
+   [3] SortedList_insert       [1] exefunc                 [8] mylock
+   [6] SortedList_length       [4] hash                    [9] myunlock
+###################################list=8############################################
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  us/call  us/call  name    
+ 52.77      0.59     0.59    74269     7.96     7.96  SortedList_lookup
+ 40.70      1.05     0.46    74043     6.16     6.16  SortedList_insert
+  1.79      1.07     0.02   148694     0.13     0.13  hash
+  1.79      1.09     0.02      129   155.32   155.32  SortedList_length
+  1.79      1.11     0.02                             main
+  0.89      1.12     0.01                             exefunc
+  0.45      1.12     0.01    75269     0.07     0.07  SortedList_delete
+  0.00      1.12     0.00   148133     0.00     0.00  mylock
+  0.00      1.12     0.00   147262     0.00     0.00  myunlock
+
+			Call graph
+
+
+granularity: each sample hit covers 2 byte(s) for 0.89% of 1.12 seconds
+
+index % time    self  children    called     name
+                                                 <spontaneous>
+[1]     98.2    0.01    1.09                 exefunc [1]
+                0.59    0.00   74269/74269       SortedList_lookup [2]
+                0.46    0.00   74043/74043       SortedList_insert [3]
+                0.02    0.00  148694/148694      hash [5]
+                0.02    0.00     128/129         SortedList_length [6]
+                0.01    0.00   75269/75269       SortedList_delete [7]
+                0.00    0.00  148133/148133      mylock [8]
+                0.00    0.00  147262/147262      myunlock [9]
+-----------------------------------------------
+                0.59    0.00   74269/74269       exefunc [1]
+[2]     52.7    0.59    0.00   74269         SortedList_lookup [2]
+-----------------------------------------------
+                0.46    0.00   74043/74043       exefunc [1]
+[3]     40.6    0.46    0.00   74043         SortedList_insert [3]
+-----------------------------------------------
+                                                 <spontaneous>
+[4]      1.8    0.02    0.00                 main [4]
+                0.00    0.00       1/129         SortedList_length [6]
+-----------------------------------------------
+                0.02    0.00  148694/148694      exefunc [1]
+[5]      1.8    0.02    0.00  148694         hash [5]
+-----------------------------------------------
+                0.00    0.00       1/129         main [4]
+                0.02    0.00     128/129         exefunc [1]
+[6]      1.8    0.02    0.00     129         SortedList_length [6]
+-----------------------------------------------
+                0.01    0.00   75269/75269       exefunc [1]
+[7]      0.4    0.01    0.00   75269         SortedList_delete [7]
+-----------------------------------------------
+                0.00    0.00  148133/148133      exefunc [1]
+[8]      0.0    0.00    0.00  148133         mylock [8]
+-----------------------------------------------
+                0.00    0.00  147262/147262      exefunc [1]
+[9]      0.0    0.00    0.00  147262         myunlock [9]
+-----------------------------------------------
+
+Index by function name
+
+   [7] SortedList_delete       [2] SortedList_lookup       [4] main
+   [3] SortedList_insert       [1] exefunc                 [8] mylock
+   [6] SortedList_length       [5] hash                    [9] myunlock
+################################list=16################################################
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  us/call  us/call  name    
+ 55.98      0.19     0.19    67000     2.84     2.84  SortedList_insert
+ 35.36      0.31     0.12    65208     1.84     1.84  SortedList_lookup
+  5.89      0.33     0.02   133182     0.15     0.15  hash
+  2.95      0.34     0.01                             main
+  0.00      0.34     0.00   132094     0.00     0.00  mylock
+  0.00      0.34     0.00   130888     0.00     0.00  myunlock
+  0.00      0.34     0.00    67303     0.00     0.00  SortedList_delete
+  0.00      0.34     0.00      252     0.00     0.00  SortedList_length
+
+			Call graph
+
+
+granularity: each sample hit covers 2 byte(s) for 2.94% of 0.34 seconds
+
+index % time    self  children    called     name
+                                                 <spontaneous>
+[1]     97.1    0.00    0.33                 exefunc [1]
+                0.19    0.00   67000/67000       SortedList_insert [2]
+                0.12    0.00   65208/65208       SortedList_lookup [3]
+                0.02    0.00  133182/133182      hash [4]
+                0.00    0.00  132094/132094      mylock [6]
+                0.00    0.00  130888/130888      myunlock [7]
+                0.00    0.00   67303/67303       SortedList_delete [8]
+                0.00    0.00     251/252         SortedList_length [9]
+-----------------------------------------------
+                0.19    0.00   67000/67000       exefunc [1]
+[2]     55.9    0.19    0.00   67000         SortedList_insert [2]
+-----------------------------------------------
+                0.12    0.00   65208/65208       exefunc [1]
+[3]     35.3    0.12    0.00   65208         SortedList_lookup [3]
+-----------------------------------------------
+                0.02    0.00  133182/133182      exefunc [1]
+[4]      5.9    0.02    0.00  133182         hash [4]
+-----------------------------------------------
+                                                 <spontaneous>
+[5]      2.9    0.01    0.00                 main [5]
+                0.00    0.00       1/252         SortedList_length [9]
+-----------------------------------------------
+                0.00    0.00  132094/132094      exefunc [1]
+[6]      0.0    0.00    0.00  132094         mylock [6]
+-----------------------------------------------
+                0.00    0.00  130888/130888      exefunc [1]
+[7]      0.0    0.00    0.00  130888         myunlock [7]
+-----------------------------------------------
+                0.00    0.00   67303/67303       exefunc [1]
+[8]      0.0    0.00    0.00   67303         SortedList_delete [8]
+-----------------------------------------------
+                0.00    0.00       1/252         main [5]
+                0.00    0.00     251/252         exefunc [1]
+[9]      0.0    0.00    0.00     252         SortedList_length [9]
+-----------------------------------------------
+
+Index by function name
+
+   [8] SortedList_delete       [3] SortedList_lookup       [6] mylock
+   [2] SortedList_insert       [4] hash                    [7] myunlock
+   [9] SortedList_length       [5] main
+###############################list=32############################################
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  us/call  us/call  name    
+ 46.51      0.13     0.13    58042     2.24     2.24  SortedList_insert
+ 35.78      0.23     0.10    56847     1.76     1.76  SortedList_lookup
+ 10.73      0.26     0.03   116211     0.26     0.26  hash
+  3.58      0.27     0.01    59292     0.17     0.17  SortedList_delete
+  3.58      0.28     0.01                             main
+  0.00      0.28     0.00   115120     0.00     0.00  mylock
+  0.00      0.28     0.00   113057     0.00     0.00  myunlock
+  0.00      0.28     0.00      472     0.00     0.00  SortedList_length
+
+			Call graph
+
+
+granularity: each sample hit covers 2 byte(s) for 3.56% of 0.28 seconds
+
+index % time    self  children    called     name
+                                                 <spontaneous>
+[1]     96.4    0.00    0.27                 exefunc [1]
+                0.13    0.00   58042/58042       SortedList_insert [2]
+                0.10    0.00   56847/56847       SortedList_lookup [3]
+                0.03    0.00  116211/116211      hash [4]
+                0.01    0.00   59292/59292       SortedList_delete [5]
+                0.00    0.00  115120/115120      mylock [7]
+                0.00    0.00  113057/113057      myunlock [8]
+                0.00    0.00     471/472         SortedList_length [9]
+-----------------------------------------------
+                0.13    0.00   58042/58042       exefunc [1]
+[2]     46.4    0.13    0.00   58042         SortedList_insert [2]
+-----------------------------------------------
+                0.10    0.00   56847/56847       exefunc [1]
+[3]     35.7    0.10    0.00   56847         SortedList_lookup [3]
+-----------------------------------------------
+                0.03    0.00  116211/116211      exefunc [1]
+[4]     10.7    0.03    0.00  116211         hash [4]
+-----------------------------------------------
+                0.01    0.00   59292/59292       exefunc [1]
+[5]      3.6    0.01    0.00   59292         SortedList_delete [5]
+-----------------------------------------------
+                                                 <spontaneous>
+[6]      3.6    0.01    0.00                 main [6]
+                0.00    0.00       1/472         SortedList_length [9]
+-----------------------------------------------
+                0.00    0.00  115120/115120      exefunc [1]
+[7]      0.0    0.00    0.00  115120         mylock [7]
+-----------------------------------------------
+                0.00    0.00  113057/113057      exefunc [1]
+[8]      0.0    0.00    0.00  113057         myunlock [8]
+-----------------------------------------------
+                0.00    0.00       1/472         main [6]
+                0.00    0.00     471/472         exefunc [1]
+[9]      0.0    0.00    0.00     472         SortedList_length [9]
+-----------------------------------------------
+
+Index by function name
+
+   [5] SortedList_delete       [3] SortedList_lookup       [7] mylock
+   [2] SortedList_insert       [4] hash                    [8] myunlock
+   [9] SortedList_length       [6] main
+################################list=64###############################################
+
+######spin_lock###################################
+#######################list=1#############################################
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  ms/call  ms/call  name    
+ 98.57    532.75   532.75   113489     4.69     4.69  mylock
+  0.86    537.38     4.64    75891     0.06     0.06  SortedList_lookup
+  0.74    541.36     3.98    75544     0.05     0.05  SortedList_insert
+  0.01    541.40     0.04                             main
+  0.00    541.42     0.02        8     2.50     2.50  SortedList_length
+  0.00    541.43     0.01   159990     0.00     0.00  hash
+  0.00    541.44     0.01                             exefunc
+  0.00    541.44     0.00   160002     0.00     0.00  myunlock
+  0.00    541.44     0.00    79993     0.00     0.00  SortedList_delete
+
+			Call graph
+
+
+granularity: each sample hit covers 2 byte(s) for 0.00% of 541.44 seconds
+
+index % time    self  children    called     name
+                                                 <spontaneous>
+[1]    100.0    0.01  541.39                 exefunc [1]
+              532.75    0.00  113489/113489      mylock [2]
+                4.64    0.00   75891/75891       SortedList_lookup [3]
+                3.98    0.00   75544/75544       SortedList_insert [4]
+                0.02    0.00       7/8           SortedList_length [6]
+                0.01    0.00  159990/159990      hash [7]
+                0.00    0.00  160002/160002      myunlock [8]
+                0.00    0.00   79993/79993       SortedList_delete [9]
+-----------------------------------------------
+              532.75    0.00  113489/113489      exefunc [1]
+[2]     98.4  532.75    0.00  113489         mylock [2]
+-----------------------------------------------
+                4.64    0.00   75891/75891       exefunc [1]
+[3]      0.9    4.64    0.00   75891         SortedList_lookup [3]
+-----------------------------------------------
+                3.98    0.00   75544/75544       exefunc [1]
+[4]      0.7    3.98    0.00   75544         SortedList_insert [4]
+-----------------------------------------------
+                                                 <spontaneous>
+[5]      0.0    0.04    0.00                 main [5]
+                0.00    0.00       1/8           SortedList_length [6]
+-----------------------------------------------
+                0.00    0.00       1/8           main [5]
+                0.02    0.00       7/8           exefunc [1]
+[6]      0.0    0.02    0.00       8         SortedList_length [6]
+-----------------------------------------------
+                0.01    0.00  159990/159990      exefunc [1]
+[7]      0.0    0.01    0.00  159990         hash [7]
+-----------------------------------------------
+                0.00    0.00  160002/160002      exefunc [1]
+[8]      0.0    0.00    0.00  160002         myunlock [8]
+-----------------------------------------------
+                0.00    0.00   79993/79993       exefunc [1]
+[9]      0.0    0.00    0.00   79993         SortedList_delete [9]
+-----------------------------------------------
+
+Index by function name
+
+   [9] SortedList_delete       [3] SortedList_lookup       [5] main
+   [4] SortedList_insert       [1] exefunc                 [2] mylock
+   [6] SortedList_length       [7] hash                    [8] myunlock
+
+###########################################list=2##################################################
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  ms/call  ms/call  name    
+ 97.31    138.22   138.22   132797     1.04     1.04  mylock
+  1.57    140.44     2.22    76896     0.03     0.03  SortedList_lookup
+  1.26    142.24     1.79    76339     0.02     0.02  SortedList_insert
+  0.01    142.26     0.02       17     1.18     1.18  SortedList_length
+  0.01    142.28     0.02                             main
+  0.01    142.29     0.01   159322     0.00     0.00  hash
+  0.01    142.30     0.01                             exefunc
+  0.00    142.30     0.00   159244     0.00     0.00  myunlock
+  0.00    142.30     0.00    79808     0.00     0.00  SortedList_delete
+
+			Call graph
+
+
+granularity: each sample hit covers 2 byte(s) for 0.01% of 142.30 seconds
+
+index % time    self  children    called     name
+                                                 <spontaneous>
+[1]    100.0    0.01  142.27                 exefunc [1]
+              138.22    0.00  132797/132797      mylock [2]
+                2.22    0.00   76896/76896       SortedList_lookup [3]
+                1.79    0.00   76339/76339       SortedList_insert [4]
+                0.02    0.00      16/17          SortedList_length [6]
+                0.01    0.00  159322/159322      hash [7]
+                0.00    0.00  159244/159244      myunlock [8]
+                0.00    0.00   79808/79808       SortedList_delete [9]
+-----------------------------------------------
+              138.22    0.00  132797/132797      exefunc [1]
+[2]     97.1  138.22    0.00  132797         mylock [2]
+-----------------------------------------------
+                2.22    0.00   76896/76896       exefunc [1]
+[3]      1.6    2.22    0.00   76896         SortedList_lookup [3]
+-----------------------------------------------
+                1.79    0.00   76339/76339       exefunc [1]
+[4]      1.3    1.79    0.00   76339         SortedList_insert [4]
+-----------------------------------------------
+                                                 <spontaneous>
+[5]      0.0    0.02    0.00                 main [5]
+                0.00    0.00       1/17          SortedList_length [6]
+-----------------------------------------------
+                0.00    0.00       1/17          main [5]
+                0.02    0.00      16/17          exefunc [1]
+[6]      0.0    0.02    0.00      17         SortedList_length [6]
+-----------------------------------------------
+                0.01    0.00  159322/159322      exefunc [1]
+[7]      0.0    0.01    0.00  159322         hash [7]
+-----------------------------------------------
+                0.00    0.00  159244/159244      exefunc [1]
+[8]      0.0    0.00    0.00  159244         myunlock [8]
+-----------------------------------------------
+                0.00    0.00   79808/79808       exefunc [1]
+[9]      0.0    0.00    0.00   79808         SortedList_delete [9]
+-----------------------------------------------
+
+Index by function name
+
+   [9] SortedList_delete       [3] SortedList_lookup       [5] main
+   [4] SortedList_insert       [1] exefunc                 [2] mylock
+   [6] SortedList_length       [7] hash                    [8] myunlock
+###################################list=4###########################################
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  us/call  us/call  name    
+ 94.12     32.68    32.68   136538   239.34   239.34  mylock
+  3.35     33.84     1.16    73631    15.78    15.78  SortedList_lookup
+  2.54     34.72     0.88    73260    12.03    12.03  SortedList_insert
+  0.09     34.75     0.03       32   939.20   939.20  SortedList_length
+  0.04     34.77     0.02                             main
+  0.03     34.78     0.01    78735     0.13     0.13  SortedList_delete
+  0.00     34.78     0.00   156576     0.00     0.00  myunlock
+  0.00     34.78     0.00   156546     0.00     0.00  hash
+
+			Call graph
+
+
+granularity: each sample hit covers 2 byte(s) for 0.03% of 34.78 seconds
+
+index % time    self  children    called     name
+                                                 <spontaneous>
+[1]    100.0    0.00   34.76                 exefunc [1]
+               32.68    0.00  136538/136538      mylock [2]
+                1.16    0.00   73631/73631       SortedList_lookup [3]
+                0.88    0.00   73260/73260       SortedList_insert [4]
+                0.03    0.00      31/32          SortedList_length [5]
+                0.01    0.00   78735/78735       SortedList_delete [7]
+                0.00    0.00  156576/156576      myunlock [8]
+                0.00    0.00  156546/156546      hash [9]
+-----------------------------------------------
+               32.68    0.00  136538/136538      exefunc [1]
+[2]     94.0   32.68    0.00  136538         mylock [2]
+-----------------------------------------------
+                1.16    0.00   73631/73631       exefunc [1]
+[3]      3.3    1.16    0.00   73631         SortedList_lookup [3]
+-----------------------------------------------
+                0.88    0.00   73260/73260       exefunc [1]
+[4]      2.5    0.88    0.00   73260         SortedList_insert [4]
+-----------------------------------------------
+                0.00    0.00       1/32          main [6]
+                0.03    0.00      31/32          exefunc [1]
+[5]      0.1    0.03    0.00      32         SortedList_length [5]
+-----------------------------------------------
+                                                 <spontaneous>
+[6]      0.0    0.02    0.00                 main [6]
+                0.00    0.00       1/32          SortedList_length [5]
+-----------------------------------------------
+                0.01    0.00   78735/78735       exefunc [1]
+[7]      0.0    0.01    0.00   78735         SortedList_delete [7]
+-----------------------------------------------
+                0.00    0.00  156576/156576      exefunc [1]
+[8]      0.0    0.00    0.00  156576         myunlock [8]
+-----------------------------------------------
+                0.00    0.00  156546/156546      exefunc [1]
+[9]      0.0    0.00    0.00  156546         hash [9]
+-----------------------------------------------
+
+Index by function name
+
+   [7] SortedList_delete       [3] SortedList_lookup       [2] mylock
+   [4] SortedList_insert       [9] hash                    [8] myunlock
+   [5] SortedList_length       [6] main
+###############################list=8#########################################################
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  us/call  us/call  name    
+ 87.83      7.90     7.90   135294    58.42    58.42  mylock
+  6.23      8.47     0.56    68050     8.24     8.24  SortedList_lookup
+  5.57      8.97     0.50    68171     7.35     7.35  SortedList_insert
+  0.33      9.00     0.03                             main
+  0.11      9.01     0.01   150458     0.07     0.07  hash
+  0.11      9.02     0.01       59   169.80   169.80  SortedList_length
+  0.00      9.02     0.00   150713     0.00     0.00  myunlock
+  0.00      9.02     0.00    76146     0.00     0.00  SortedList_delete
+
+			Call graph
+
+
+granularity: each sample hit covers 2 byte(s) for 0.11% of 9.02 seconds
+
+index % time    self  children    called     name
+                                                 <spontaneous>
+[1]     99.7    0.00    8.99                 exefunc [1]
+                7.90    0.00  135294/135294      mylock [2]
+                0.56    0.00   68050/68050       SortedList_lookup [3]
+                0.50    0.00   68171/68171       SortedList_insert [4]
+                0.01    0.00  150458/150458      hash [6]
+                0.01    0.00      58/59          SortedList_length [7]
+                0.00    0.00  150713/150713      myunlock [8]
+                0.00    0.00   76146/76146       SortedList_delete [9]
+-----------------------------------------------
+                7.90    0.00  135294/135294      exefunc [1]
+[2]     87.7    7.90    0.00  135294         mylock [2]
+-----------------------------------------------
+                0.56    0.00   68050/68050       exefunc [1]
+[3]      6.2    0.56    0.00   68050         SortedList_lookup [3]
+-----------------------------------------------
+                0.50    0.00   68171/68171       exefunc [1]
+[4]      5.6    0.50    0.00   68171         SortedList_insert [4]
+-----------------------------------------------
+                                                 <spontaneous>
+[5]      0.3    0.03    0.00                 main [5]
+                0.00    0.00       1/59          SortedList_length [7]
+-----------------------------------------------
+                0.01    0.00  150458/150458      exefunc [1]
+[6]      0.1    0.01    0.00  150458         hash [6]
+-----------------------------------------------
+                0.00    0.00       1/59          main [5]
+                0.01    0.00      58/59          exefunc [1]
+[7]      0.1    0.01    0.00      59         SortedList_length [7]
+-----------------------------------------------
+                0.00    0.00  150713/150713      exefunc [1]
+[8]      0.0    0.00    0.00  150713         myunlock [8]
+-----------------------------------------------
+                0.00    0.00   76146/76146       exefunc [1]
+[9]      0.0    0.00    0.00   76146         SortedList_delete [9]
+-----------------------------------------------
+
+Index by function name
+
+   [9] SortedList_delete       [3] SortedList_lookup       [2] mylock
+   [4] SortedList_insert       [6] hash                    [8] myunlock
+   [7] SortedList_length       [5] main
+#######################################list=16#####################################################
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  us/call  us/call  name    
+ 74.64      1.87     1.87   126806    14.77    14.77  mylock
+ 12.37      2.18     0.31    63773     4.87     4.87  SortedList_insert
+ 11.97      2.48     0.30    58941     5.10     5.10  SortedList_lookup
+  0.80      2.50     0.02   140634     0.14     0.14  hash
+  0.40      2.51     0.01                             main
+  0.00      2.51     0.00   140366     0.00     0.00  myunlock
+  0.00      2.51     0.00    70656     0.00     0.00  SortedList_delete
+  0.00      2.51     0.00       98     0.00     0.00  SortedList_length
+
+			Call graph
+
+
+granularity: each sample hit covers 2 byte(s) for 0.40% of 2.51 seconds
+
+index % time    self  children    called     name
+                                                 <spontaneous>
+[1]     99.6    0.00    2.50                 exefunc [1]
+                1.87    0.00  126806/126806      mylock [2]
+                0.31    0.00   63773/63773       SortedList_insert [3]
+                0.30    0.00   58941/58941       SortedList_lookup [4]
+                0.02    0.00  140634/140634      hash [5]
+                0.00    0.00  140366/140366      myunlock [7]
+                0.00    0.00   70656/70656       SortedList_delete [8]
+                0.00    0.00      97/98          SortedList_length [9]
+-----------------------------------------------
+                1.87    0.00  126806/126806      exefunc [1]
+[2]     74.5    1.87    0.00  126806         mylock [2]
+-----------------------------------------------
+                0.31    0.00   63773/63773       exefunc [1]
+[3]     12.4    0.31    0.00   63773         SortedList_insert [3]
+-----------------------------------------------
+                0.30    0.00   58941/58941       exefunc [1]
+[4]     12.0    0.30    0.00   58941         SortedList_lookup [4]
+-----------------------------------------------
+                0.02    0.00  140634/140634      exefunc [1]
+[5]      0.8    0.02    0.00  140634         hash [5]
+-----------------------------------------------
+                                                 <spontaneous>
+[6]      0.4    0.01    0.00                 main [6]
+                0.00    0.00       1/98          SortedList_length [9]
+-----------------------------------------------
+                0.00    0.00  140366/140366      exefunc [1]
+[7]      0.0    0.00    0.00  140366         myunlock [7]
+-----------------------------------------------
+                0.00    0.00   70656/70656       exefunc [1]
+[8]      0.0    0.00    0.00   70656         SortedList_delete [8]
+-----------------------------------------------
+                0.00    0.00       1/98          main [6]
+                0.00    0.00      97/98          exefunc [1]
+[9]      0.0    0.00    0.00      98         SortedList_length [9]
+-----------------------------------------------
+
+Index by function name
+
+   [8] SortedList_delete       [4] SortedList_lookup       [2] mylock
+   [3] SortedList_insert       [5] hash                    [7] myunlock
+   [9] SortedList_length       [6] main
+#############################################list=32##############################################
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  us/call  us/call  name    
+ 47.91      0.44     0.44   120347     3.66     3.66  mylock
+ 21.78      0.64     0.20    60427     3.32     3.32  SortedList_insert
+ 20.69      0.83     0.19    57660     3.30     3.30  SortedList_lookup
+  3.27      0.86     0.03      225   133.58   133.58  SortedList_length
+  2.18      0.88     0.02   125940     0.16     0.16  hash
+  2.18      0.90     0.02                             exefunc
+  2.18      0.92     0.02                             main
+  0.00      0.92     0.00   126421     0.00     0.00  myunlock
+  0.00      0.92     0.00    64732     0.00     0.00  SortedList_delete
+
+			Call graph
+
+
+granularity: each sample hit covers 2 byte(s) for 1.08% of 0.92 seconds
+
+index % time    self  children    called     name
+                                                 <spontaneous>
+[1]     97.8    0.02    0.88                 exefunc [1]
+                0.44    0.00  120347/120347      mylock [2]
+                0.20    0.00   60427/60427       SortedList_insert [3]
+                0.19    0.00   57660/57660       SortedList_lookup [4]
+                0.03    0.00     224/225         SortedList_length [5]
+                0.02    0.00  125940/125940      hash [7]
+                0.00    0.00  126421/126421      myunlock [8]
+                0.00    0.00   64732/64732       SortedList_delete [9]
+-----------------------------------------------
+                0.44    0.00  120347/120347      exefunc [1]
+[2]     47.8    0.44    0.00  120347         mylock [2]
+-----------------------------------------------
+                0.20    0.00   60427/60427       exefunc [1]
+[3]     21.7    0.20    0.00   60427         SortedList_insert [3]
+-----------------------------------------------
+                0.19    0.00   57660/57660       exefunc [1]
+[4]     20.7    0.19    0.00   57660         SortedList_lookup [4]
+-----------------------------------------------
+                0.00    0.00       1/225         main [6]
+                0.03    0.00     224/225         exefunc [1]
+[5]      3.3    0.03    0.00     225         SortedList_length [5]
+-----------------------------------------------
+                                                 <spontaneous>
+[6]      2.2    0.02    0.00                 main [6]
+                0.00    0.00       1/225         SortedList_length [5]
+-----------------------------------------------
+                0.02    0.00  125940/125940      exefunc [1]
+[7]      2.2    0.02    0.00  125940         hash [7]
+-----------------------------------------------
+                0.00    0.00  126421/126421      exefunc [1]
+[8]      0.0    0.00    0.00  126421         myunlock [8]
+-----------------------------------------------
+                0.00    0.00   64732/64732       exefunc [1]
+[9]      0.0    0.00    0.00   64732         SortedList_delete [9]
+-----------------------------------------------
+
+Index by function name
+
+   [9] SortedList_delete       [4] SortedList_lookup       [6] main
+   [3] SortedList_insert       [1] exefunc                 [2] mylock
+   [5] SortedList_length       [7] hash                    [8] myunlock
+################################################list=64############################################################
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  us/call  us/call  name    
+ 33.39      0.12     0.12   105582     1.14     1.14  mylock
+ 19.48      0.19     0.07    53940     1.30     1.30  SortedList_insert
+ 19.48      0.26     0.07    50793     1.38     1.38  SortedList_lookup
+ 16.70      0.32     0.06                             exefunc
+  5.57      0.34     0.02   106569     0.19     0.19  myunlock
+  2.78      0.35     0.01   106196     0.09     0.09  hash
+  2.78      0.36     0.01                             main
+  0.00      0.36     0.00    55411     0.00     0.00  SortedList_delete
+  0.00      0.36     0.00      465     0.00     0.00  SortedList_length
+
+			Call graph
+
+
+granularity: each sample hit covers 2 byte(s) for 2.77% of 0.36 seconds
+
+index % time    self  children    called     name
+                                                 <spontaneous>
+[1]     97.2    0.06    0.29                 exefunc [1]
+                0.12    0.00  105582/105582      mylock [2]
+                0.07    0.00   53940/53940       SortedList_insert [3]
+                0.07    0.00   50793/50793       SortedList_lookup [4]
+                0.02    0.00  106569/106569      myunlock [5]
+                0.01    0.00  106196/106196      hash [6]
+                0.00    0.00   55411/55411       SortedList_delete [8]
+                0.00    0.00     464/465         SortedList_length [9]
+-----------------------------------------------
+                0.12    0.00  105582/105582      exefunc [1]
+[2]     33.3    0.12    0.00  105582         mylock [2]
+-----------------------------------------------
+                0.07    0.00   53940/53940       exefunc [1]
+[3]     19.4    0.07    0.00   53940         SortedList_insert [3]
+-----------------------------------------------
+                0.07    0.00   50793/50793       exefunc [1]
+[4]     19.4    0.07    0.00   50793         SortedList_lookup [4]
+-----------------------------------------------
+                0.02    0.00  106569/106569      exefunc [1]
+[5]      5.6    0.02    0.00  106569         myunlock [5]
+-----------------------------------------------
+                0.01    0.00  106196/106196      exefunc [1]
+[6]      2.8    0.01    0.00  106196         hash [6]
+-----------------------------------------------
+                                                 <spontaneous>
+[7]      2.8    0.01    0.00                 main [7]
+                0.00    0.00       1/465         SortedList_length [9]
+-----------------------------------------------
+                0.00    0.00   55411/55411       exefunc [1]
+[8]      0.0    0.00    0.00   55411         SortedList_delete [8]
+-----------------------------------------------
+                0.00    0.00       1/465         main [7]
+                0.00    0.00     464/465         exefunc [1]
+[9]      0.0    0.00    0.00     465         SortedList_length [9]
+-----------------------------------------------
+
+Index by function name
+
+   [8] SortedList_delete       [4] SortedList_lookup       [7] main
+   [3] SortedList_insert       [1] exefunc                 [2] mylock
+   [9] SortedList_length       [6] hash                    [5] myunlock
