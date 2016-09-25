@@ -1,0 +1,37 @@
+#######lab2b########
+Student Name: ZhengKai Zhang
+Student ID: 604582162
+
+My graph is first.png and second.png
+
+my program correctly work with the option in spec.
+
+Answer to the question at below
+#########################################################
+QUESTION 2B.1A:
+Explain the variation in time per operation vs the number of iterations?
+The time oer operations drops as the number of iterations grow.(at first)
+It is because of the overhead of creating threads effect the per operation time at first.
+the per operation will increase as number of iteration increase at late time becuase the time complexcity grow 
+as linear O(n) for the list insertion.The time per operation will increase as number of iteration increase at late time.
+(since n is increase with iteration)
+
+
+QUESTION 2B.1B:
+How would you propose to correct for this effect?
+To fix the effect we need to elimate the inseration linear time complecity grow.
+We can simple divide the total time by number of nodes in list which is close to iteration*threads.
+It will give us the correct time for our graph in graph2.
+QUESTIONS 2B.2A:
+Compare the variation in time per protected operation vs the number of threads in Project 2B and in Project 2A.  Explain the difference.
+1. the lab2b(list)'s critical resource is much greater than lab2a (add)'s critical resource.
+2.the clock is held for a longer time in lab2b than lab2a.
+3.probability of conflict in list is much higher than lab2a for the same number of threads. 
+4. Lab2b has more conflicts, more blocked threads,more over head,and less parallilism.
+
+
+
+
+
+
+
