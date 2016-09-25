@@ -1,0 +1,99 @@
+Student Name: ZhengKai Zhang
+Student ID: 604582162
+
+QA-2
+Examine the output, see what is being sent to the server. Write a brief description of 
+what you see and how this relates to the security goals of this system, and include it in your lab submission.
+I see the message of rate:3 (the speed of message)range:4 (variation of heartbeat) 
+It sending the Heart rate message of patient to the server 
+It received the Heart rate message of patient from the server, and print.
+It is pseudorandomly. Since UDP does not encrypt traffic- the data is sent out over the wireless medium is 
+in Plain text. And the message here is not safe which can be stolen by someone executing the packet inspector.
+
+QA-4
+Explain the output of the packet sniffer and why this is important
+It contains the exchange information,and the message string.
+It is important because the packet sniffer is the unknown sniffer follow by 
+plain text of heart rate string, it is important because this packet sniffer 
+stolen the heart rate string been sent.
+
+QA-5(b)
+Comment on how your “./udp_client” reacts and take a screenshot of the output
+the udp_client recive a message New rate 5 received from server.
+and the rate of Current setting change to 5 and the speed of message changed.
+
+QA-5(d)
+Explain the output of the packet sniffer and why this is important
+It contains the exchange information,and the message string.
+It is important because the packet sniffer is the unknown sniffer follow by 
+plain text of heart rate string, it is important because this packet sniffer 
+stolen the heart rate string been sent.
+
+QA-6(b)
+Comment on how your “./udp_client” reacts and take a screenshot of the output
+after attack
+the udp_client recive a message New rate 15 received from server.
+and the rate of Current setting change to 15 and the speed of message changed.(slow)
+
+QA-6(d)
+Explain the output of the packet sniffer and why this is important
+It contains the exchange information,and the message string.
+It is important because the packet sniffer is the unknown sniffer follow by 
+plain text of heart rate string, it is important because this packet sniffer 
+stolen the heart rate string been sent.
+
+QB-4
+Examine the output, see what is being sent to the server. Include an analysis of this
+output in your lab submission.
+
+it is very smilar message as QA-2
+but with two more messages Client-Server connection complete with AES256-SHA encryption
+Server Certificate Descriptor:
+Then it print mostly similar message as UDP,but this time it is encrypt by TLS which make our 
+heart rate message become safter.
+
+QB-5
+Explain the output of the packet sniffer and why this is important
+The sniffer here is very similar to QA-4 but with the plain text of heart rate string here
+is encrypted by the TLS.
+so the heart rate is not be stolen here.
+
+QB-6(b)
+Comment on how your “./tls_client” reacts and take a screenshot of the output
+the tls_client receive a message New rate 1 received from server.
+and the current setting chaged to 1 and speed of message changed
+Also the set rate cause a unmatched message problem in this step.
+
+QB-6(d)
+Explain the output of the packet sniffer and why this is important
+The sniffer here is very similar to QA-4 but with the plain text of heart rate string here
+is encrypted by the TLS.
+so the heart rate is not be stolen here.
+
+QB-7(b)
+Comment on how your “./tls_client” reacts and take a screenshot of the output
+after attack
+tls_client didn't receive any message and continue to print message with original rate
+this is because the transcation is protect by the tls which make attack not successful.
+
+QB-7(d)
+Explain the output of the packet sniffer and why this is important
+The sniffer here is very similar to QA-4 but with the plain text of heart rate string here
+is encrypted by the TLS.
+so the heart rate is not be stolen here.
+
+QC-3
+Comment on how your “./tls_client” reacts and take a screenshot of the output that
+appears both before and after the execution, “./set_rate 1”
+
+before the ./set_rate 1 Current settings of message is rate 3
+after the ./set_rate 1 Client receive message New rate 1 received from server.
+and change the current settings of rate to 1 , and speed of message changed.
+
+QC-4
+Comment on how your dual thread tls_client avoids errors that are discussed above.
+In my tls_client.c for the thread function inside of 
+if statement
+	if(strstr(buf2, "new_rate: ") != NULL) //server receive new_rate
+	I add one more line  receive_length = SSL_read(ssl, buf2, sizeof(buf2));
+	after the new rate setting which fix this off by one problem(unmatched message problem)
