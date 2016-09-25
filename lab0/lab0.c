@@ -7,128 +7,82 @@
 #include <signal.h>
 #include <getopt.h>
 
-#define B_size 8192
-void sighandler (int signum)
+#define MAX_SIZE 4096
+
+static int segfault_flag = 0;
+
+static void sigsegv_handler(int signo)
 {
-   fprintf(stderr,"'Process %d got signal %d\n",getpid());
-   signal(signum, SIG_DFL);
-   kill(getpid(),signum);
+  fprintf(stderr, "SIGSEGV signal!\n");
+  exit(3);
 }
-int main(int argc, char * argv[])
+
+int main (int argc, char **argv)
 {
-     int opt= 0;
-    int * s1 =NULL;
-    int input = -1, output = -1, segfault  = -1;
-    int check=0,check1=0,check2=0,check3=0;
-      int fd0, fd1; //name of input output file descriptors
-   ssize_t input_n,output_n; //number of bytes return by read and write 
-   char buffer[B_size]; //character buffer
-    int temp1,temp2;
-   // const char * s1 =NULL;
-          //   const char * s2 =NULL;
-            // bool case1=false,case2=false,case3=false,case4=false;
-     static struct option long_options[] = {    
-        {"input",    required_argument, NULL,  'i' },
-        {"output",   required_argument, NULL,  'o' },
-        {"segfault", no_argument,  NULL,  's' },
-        {"catch",    no_argument, NULL,  'c' },
-        {0,           0,                 0,  0   }
-    };
-     int long_index =0;
-    while ((opt = getopt_long(argc, argv,"ios:c:", 
-                   long_options, &long_index )) != -1) {
-        switch (opt) {
-             case 'i' :check=1;
-             fd0 = open(optarg,O_RDONLY);
-	   
-                       if (fd0 == -1)
-                          {
-                            fprintf(stderr,"'%s' file can't open\n",optarg);
-                            perror ("error:can't open file");
-                            _exit(1);
-                           }
-                           if (fd0 != 0)
-	       {
-		      close(0);
-		       dup(fd0);
-	       }
-                 break;
-             case 'o' : check1=1;
-              fd1= open(optarg, O_RDWR|O_CREAT, 0644);
-	   
-                         if (fd1 == -1)
-                              {
-                               fprintf(stderr,"'%s' file can't open\n",optarg);
-                               perror ("error:can't open file");
-                                 _exit(2);
-                                     }
-   if (fd1!=1)
-		{
-		      close(1);
-		       dup(fd1);
-		}
-                             if (check ==1)
-                             {        
-                           while((input_n=read(fd0,&buffer,B_size))>0)
-                                        {
-                                   output_n = write(fd1,&buffer, (ssize_t) input_n);
-                                   if(input_n != output_n){
-                                      /* Write error */
-                                    perror("writing error!");
-                                   
-                                   }
-                                }
-                                }
-                 break;
-             case 's' : //case3=true;  
-	       check2=1;
-           
-                 break;
-             case 'c' : check3=1;
-                    
-                 break;
-             default: 
-               fprintf(stdout,"'%s' has no argument.\n","lab1");
-                 _exit(0);
+  int c;
+  static struct option long_options[] = {
+    {"segfault", no_argument,       &segfault_flag, 's'},
+    {"catch",    no_argument,       0,              'c'},
+    {"input",    required_argument, 0,              'i'},
+    {"output",   required_argument, 0,              'o'}
+  };
+  int ifd = 0;
+  int ofd = 1;
+
+  while (1) {
+    int option_index = 0;
+
+    c = getopt_long(argc, argv, "sci:o:", long_options, &option_index);
+    if (c == -1)
+      break;
+
+    switch (c) {
+      case 'c':
+        signal(SIGSEGV, sigsegv_handler);
+        break;
+
+      case 'i':
+        ifd = open(optarg, O_RDONLY);
+        if (ifd >= 0) {
+          close(0);
+          dup(ifd);
+          close(ifd);
+        } else {
+          fprintf(stderr, "Unable to open the file: %s\n", optarg);
+          perror("Unable to open the specified input file");
+          exit(1);
         }
+
+        break;
+
+      case 'o':
+        ofd = creat(optarg, 0666);
+        if (ofd >= 0) {
+          close(1);
+          dup(ofd);
+          close(ofd);
+        } else {
+          fprintf(stderr, "Unable to create the file: %s\n", optarg);
+          perror("Unable to create the specified output file");
+          exit(2);
+        }
+
+        break;
     }
-       
-      
-                              /*  else
-                                {
-                                  fprintf(stdout,"the input file not exist can't copy with only output file.\n");
-                                 return (EXIT_SUCCESS);
-                                }*/
- // if (case1==false&&case2==false&&case3==false&&case4==false)
- //  {
-  //     fprintf(stdout,"'%s' has no argument.\n","lab0");
-  //               exit(EXIT_SUCCESS);
-  // }
-   if (check2==1&&check3!=1)
-   {
-        int * s1 =NULL;
-     *s1='a';
-   }
-    if (check2==1&&check3==1)
-   {
-     signal(SIGSEGV,sighandler);
-                    fprintf(stderr,"'Process %d waits for someone to send it SIGSEGV\n",getpid());
-                         int * s1 =NULL;
-                           *s1='a';
-                       sleep(1);
-                       exit(3);
-   }
-     if (check2!=1&&check3==1)
-   {
-     signal(SIGSEGV,sighandler);
-                    fprintf(stderr,"'Process %d waits for someone to send it SIGSEGV\n",getpid());
-                       sleep(1);
-                    //   exit(3);
-   } 
-  // if(case1==true)
-   close (0);
-  // if (case2==true)
-   close (1);
-   
-   _exit(0);
-   }
+  }
+
+  if (segfault_flag) {
+    char *segfault_char = NULL;
+    *segfault_char = 3;
+  }
+  
+  int read_size = 0;
+  char buf[MAX_SIZE] = {};
+  
+
+  while ((read_size = read(0, buf, MAX_SIZE)) > 0) {
+    write(1, buf, read_size);
+  }
+
+  return 0;
+}
